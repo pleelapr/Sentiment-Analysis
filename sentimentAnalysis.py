@@ -123,7 +123,7 @@ if __name__ == "__main__":
 		# print(data)
 		tweets = tweets.append(data)
 
-	tweets = tweets.loc[:,['Date','Full Text']]
+	tweets = tweets.loc[:,['Date','Full Text','Domain']]
 
 	# tweets['token_text'] = [tokenize(item['Full Text']) for item in tweets]
 	for i in range(len(tweets)):
@@ -170,7 +170,7 @@ if __name__ == "__main__":
 		tweets.loc[ind,'sentiment_py']= get_sentiment(tweets.loc[ind,'token_text'])
     
 	#saving sentiment as a csv for cleaned tweets of a given ticker
-	tweets.to_csv(os.path.join(PATH_RESULT,currentDT+'_Sentiment.csv'), index=False)
+	tweets.to_csv(os.path.join(PATH_RESULT,currentDT+'_sentiment.csv'), index=False)
     
 	#returning a list of [positive, neutral, negative]
 	# print(tweets['sentiment_py'].value_counts())
