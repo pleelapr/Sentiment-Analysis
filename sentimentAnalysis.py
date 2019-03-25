@@ -123,7 +123,7 @@ if __name__ == "__main__":
 		# print(data)
 		tweets = tweets.append(data)
 
-	tweets = tweets.loc[:,['Date','Full Text','Domain']]
+	tweets = tweets.loc[:,['Date','Full Text','Domain','Sentiment']]
 
 	# tweets['token_text'] = [tokenize(item['Full Text']) for item in tweets]
 	for i in range(len(tweets)):
@@ -168,12 +168,25 @@ if __name__ == "__main__":
 	for ind in tweets.index:
 		# tweets.loc[i,'tweetText'] = clean_tweet(tweets.loc[i,'tweetText'])
 		tweets.loc[ind,'sentiment_py']= get_sentiment(tweets.loc[ind,'token_text'])
+		print(tweets.loc[ind,'sentiment_py'], tweets.loc[ind,'Sentiment'])
+		#compare sentiment with brandwatch result
+		if type(tweets.loc[ind,'sentiment_py']) != str:
+			tweets.loc[ind,'same_result_bw'] = 0
+		elif tweets.loc[ind,'sentiment_py'].strip() == tweets.loc[ind,'Sentiment'].strip():
+			tweets.loc[ind,'same_result_bw'] = 1
+		else:
+			tweets.loc[ind,'same_result_bw'] = 0
     
-	#saving sentiment as a csv for cleaned tweets of a given ticker
-	tweets.to_csv(os.path.join(PATH_RESULT,currentDT+'_sentiment.csv'), index=False)
+	
     
 	#returning a list of [positive, neutral, negative]
 	# print(tweets['sentiment_py'].value_counts())
+
+	#compare sentiment with brandwatch
+	print(str(sum(tweets.loc[ind,'same_result_bw'])))
+
+	#saving sentiment as a csv for cleaned tweets of a given ticker
+	tweets.to_csv(os.path.join(PATH_RESULT,currentDT+'_sentiment.csv'), index=False)
 
 	print(tweets[0:6])
 
