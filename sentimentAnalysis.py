@@ -79,10 +79,10 @@ def get_sentiment(tweet):
 	# set sentiment 
 	if analysis.sentiment.polarity > 0:
 		result = 'positive'
-	elif analysis.sentiment.polarity == 0:
-		result = 'neutral'
-	else: 
+	elif analysis.sentiment.polarity < 0:
 		result = 'negative'
+	else: 
+		result = 'neutral'
 
 	# print(result)
 	return result
