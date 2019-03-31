@@ -87,8 +87,29 @@ def get_sentiment(tweet):
 	# print(result)
 	return result
 
+def plot(date, lbl1, lbl2, title):
+	# create the plot space upon which to plot the data
+	fig, ax= plt.subplots(1, 1, figsize=(16, 9), dpi=100)
 
-def date_plot(date, ypos, yneg, yneu, yunk, title):
+	# add the x-axis and the y-axis to the plot
+	# ax.plot(date, ypos, 'positive', yneg, 'negative', yneu, 'neutral', yunk, 'unknown', color = 'red')
+	ax.plot(date, lbl1, label='retweet', color = 'red')
+	ax.plot(date, lbl2, label='not-retweet', color = 'blue')
+
+	# rotate tick labels
+	plt.setp(ax.get_xticklabels(), rotation=25)
+
+	# set title and labels for axes
+	ax.set(xlabel="Date",
+       ylabel="Count",
+       title="Playstation Now Retweet Count, from "+min(date)+" to "+max(date));
+
+	# Place a legend to the right of this smaller subplot.
+	plt.legend(bbox_to_anchor=(1, 1), loc=2)
+
+	plt.savefig('plot/'+currentDT+'_'+title+'_retweet_plot.png')
+
+def sentiment_plot(date, ypos, yneg, yneu, yunk, title):
 	# create the plot space upon which to plot the data
 	fig, ax= plt.subplots(1, 1, figsize=(16, 9), dpi=100)
 
@@ -133,12 +154,30 @@ if __name__ == "__main__":
 	    tweets.loc[i,'Date_Ext'] = date
 	    tweets.loc[i,'Time_Ext'] = time
 
-
-	# tweets['Added'] = tweets.loc[:,['Added']][0:23]
-
 	tweets.drop_duplicates(inplace=True)
 
-	print(tweets[0:6])
+	print(tweets['Domain'].value_counts())
+
+	domain_count = tweets.groupby(['Date_Ext', 'Domain']).size().unstack(fill_value=0)
+
+	domain_count.to_csv(os.path.join(PATH_RESULT,currentDT+'_domain_count.csv'), index=True)
+	#Plot
+	# plot(domain_count['Date_Ext'], domain_count['positive'], domain_count['negative'], plot_result['neutral'], plot_result['unknown'], 'overall')
+	
+	for ind in tweets.index:
+	    #Separate each line to text_data list
+		if "RT" == str(tweets.loc[ind,'Full Text'])[0:2] :
+			tweets.loc[ind,'retweet'] = 'retweet'
+		else:
+			tweets.loc[ind,'retweet'] = 'not_retweet'
+
+	retweet_count = tweets.groupby(['Date_Ext', 'retweet']).size().unstack(fill_value=0)
+	
+	print(retweet_count[0:6])
+
+	retweet_count.reset_index(inplace=True)
+	# Plot
+	plot(retweet_count['Date_Ext'], retweet_count['retweet'], retweet_count['not_retweet'], 'retweet')
 
 	#Tokenizing
 	print("--Tokenizing--")
@@ -200,7 +239,7 @@ if __name__ == "__main__":
 	plot_result.to_csv(os.path.join(PATH_RESULT,currentDT+'_sentiment_count.csv'), index=False)
 
 	#Plot
-	date_plot(plot_result['Date_Ext'], plot_result['positive'], plot_result['negative'], plot_result['neutral'], plot_result['unknown'], 'overall')
+	sentiment_plot(plot_result['Date_Ext'], plot_result['positive'], plot_result['negative'], plot_result['neutral'], plot_result['unknown'], 'overall')
 
 
 
