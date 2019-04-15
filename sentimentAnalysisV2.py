@@ -22,12 +22,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-currentDT = f"{datetime.now():%Y-%m-%d-%H-%M}"
+currentDT = ""
 
 PATH_DATA = 'data'
 PATH_RESULT = 'result'
 
-TO_INCLUDE = True
+TO_INCLUDE = False
 TOPIC = ['lag']
 
 TO_EXCLUDE = False
@@ -205,17 +205,10 @@ def plot_percent_sentiment(date, ypos, yneg, yneu, title):
 	plt.clf()
 
 
-if __name__ == "__main__":
+def pipeline(tweets):
 
-	nlp = spacy.load('en_core_web_sm')
-
-	tweets = pd.DataFrame()
-	print("--Data Loading--")
-	for filename in os.listdir(PATH_DATA):
-		data = pd.read_csv(PATH_DATA+'/'+filename, low_memory=False, encoding='utf-8')
-		# print(data)
-		tweets = tweets.append(data)
-
+	currentDT = f"{datetime.now():%Y-%m-%d-%H-%M}"
+	
 	tweets = tweets.loc[:,['Date (EST)','Contents', 'Post Title']]
 
 	print(tweets[0:6])
@@ -350,5 +343,19 @@ if __name__ == "__main__":
 	# 	tweets.loc[i,'tweetText'] = clean_tweet(tweets.loc[i,'tweetText'])
 
 	# print(tweets[0:6])
+
+if __name__ == "__main__":
+
+	nlp = spacy.load('en_core_web_sm')
+
+	tweets = pd.DataFrame()
+	for filename in os.listdir(PATH_DATA):
+		print("--Data Loading--")
+		data = pd.read_csv(PATH_DATA+'/'+filename, low_memory=False, encoding='utf-8')
+		pipeline(data)
+		# print(data)
+		# tweets = tweets.append(data)
+
+	
 
 
