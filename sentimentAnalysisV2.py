@@ -127,7 +127,7 @@ def get_sentiment(tweet):
 	# print(result)
 	return result
 
-def plot(date, lbl1, lbl2, title):
+def plot(date, lbl1, lbl2, title, currentDT):
 	# create the plot space upon which to plot the data
 	fig, ax= plt.subplots(1, 1, figsize=(16, 9), dpi=100)
 
@@ -154,7 +154,7 @@ def plot(date, lbl1, lbl2, title):
 
 	plt.savefig('plot/'+currentDT+'_'+title+'_retweet_plot.png')
 
-def sentiment_plot(date, ypos, yneg, yneu, title):
+def sentiment_plot(date, ypos, yneg, yneu, title, currentDT):
 	# create the plot space upon which to plot the data
 	fig, ax= plt.subplots(1, 1, figsize=(16, 9), dpi=100)
 
@@ -183,7 +183,7 @@ def sentiment_plot(date, ypos, yneg, yneu, title):
 
 	plt.clf()
 
-def plot_percent_sentiment(date, ypos, yneg, yneu, title):
+def plot_percent_sentiment(date, ypos, yneg, yneu, title, currentDT):
 	plt.bar(date, ypos, width=0.8, label='Positive', color='green', bottom=yneg+yneu)
 	plt.bar(date, yneg, width=0.8, label='Negative', color='red', bottom=yneu)
 	plt.bar(date, yneu, width=0.8, label='Neutral', color='grey')
@@ -330,7 +330,7 @@ def pipeline(tweets):
 	plot_result.to_csv(os.path.join(PATH_RESULT,currentDT+'_sentiment_count.csv'), index=False)
 
 	#Plot
-	sentiment_plot(plot_result['Date_Ext'], plot_result['positive'], plot_result['negative'], plot_result['neutral'], 'overall')
+	sentiment_plot(plot_result['Date_Ext'], plot_result['positive'], plot_result['negative'], plot_result['neutral'], 'overall', currentDT)
 
 	#calculate percentage of each sentiment
 	for idx in plot_result.index:
@@ -338,7 +338,7 @@ def pipeline(tweets):
 		plot_result.loc[idx,'neg_per'] = 100*plot_result.loc[idx, 'negative']/(plot_result.loc[idx, 'positive']+plot_result.loc[idx, 'negative']+plot_result.loc[idx, 'neutral'])
 		plot_result.loc[idx,'neu_per'] = 100*plot_result.loc[idx, 'neutral']/(plot_result.loc[idx, 'positive']+plot_result.loc[idx, 'negative']+plot_result.loc[idx, 'neutral'])
 
-	plot_percent_sentiment(plot_result['Date_Ext'], plot_result['pos_per'], plot_result['neg_per'], plot_result['neu_per'], 'percent sentiment')
+	plot_percent_sentiment(plot_result['Date_Ext'], plot_result['pos_per'], plot_result['neg_per'], plot_result['neu_per'], 'percent sentiment', currentDT)
 	# for i in range(len(tweets)):
 	# 	tweets.loc[i,'tweetText'] = clean_tweet(tweets.loc[i,'tweetText'])
 
