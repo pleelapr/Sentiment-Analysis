@@ -17,11 +17,29 @@ currentDT = f"{datetime.now():%Y-%m-%d-%H-%M}"
 PATH_DATA = 'data'
 PATH_RESULT = 'result'
 
-nltk.download('wordnet')
+TO_INCLUDE = True
+TOPIC = ['lag']
+
+TO_EXCLUDE = False
+EXCLUDE_TOPIC = ['google', 'stadia']
+
+PLOT_NOTE1 = ""
+PLOT_NOTE2 = ""
+
+if TO_INCLUDE:
+	PLOT_NOTE1 = "Include word : "+str(TOPIC)
+if TO_EXCLUDE:
+	PLOT_NOTE2 = "Exclude word : "+str(EXCLUDE_TOPIC)
+
+PLOT_NOTE = PLOT_NOTE1 + " " + PLOT_NOTE2
+
+ 
+
+# nltk.download('wordnet')
 
 #Get the stop words
-nltk.download('stopwords')
-en_stop = set(nltk.corpus.stopwords.words('english'))
+# nltk.download('stopwords')
+# en_stop = set(nltk.corpus.stopwords.words('english'))
 
 nlp = spacy.load('en_core_web_sm')
 # parser = English()
@@ -99,6 +117,11 @@ def plot(date, lbl1, lbl2, title):
 	# rotate tick labels
 	plt.setp(ax.get_xticklabels(), rotation=25)
 
+	# plt.text(0.02, 0.5, PLOT_NOTE, fontsize=14, transform=plt.gcf().transFigure)
+
+	# Now let's add your additional information
+	ax.annotate(PLOT_NOTE, xy=(0.5, 0), xytext=(0, 0), xycoords=('axes fraction', 'figure fraction'), textcoords='offset points', size=14, ha='center', va='bottom')
+
 	# set title and labels for axes
 	ax.set(xlabel="Date",
        ylabel="Count",
@@ -109,7 +132,7 @@ def plot(date, lbl1, lbl2, title):
 
 	plt.savefig('plot/'+currentDT+'_'+title+'_retweet_plot.png')
 
-def sentiment_plot(date, ypos, yneg, yneu, yunk, title):
+def sentiment_plot(date, ypos, yneg, yneu, title):
 	# create the plot space upon which to plot the data
 	fig, ax= plt.subplots(1, 1, figsize=(16, 9), dpi=100)
 
@@ -118,10 +141,13 @@ def sentiment_plot(date, ypos, yneg, yneu, yunk, title):
 	ax.plot(date, ypos, label='positive', color = 'red')
 	ax.plot(date, yneg, label='negative', color = 'blue')
 	ax.plot(date, yneu, label='neutral', color = 'green')
-	ax.plot(date, yunk, label='unknown', color = 'black')
+	# ax.plot(date, yunk, label='unknown', color = 'black')
 
 	# rotate tick labels
 	plt.setp(ax.get_xticklabels(), rotation=25)
+
+	# plt.text(0.02, 0.5, PLOT_NOTE, fontsize=14, transform=plt.gcf().transFigure)
+	ax.annotate(PLOT_NOTE, xy=(0.5, 0), xytext=(0, 0), xycoords=('axes fraction', 'figure fraction'), textcoords='offset points', size=14, ha='center', va='bottom')
 
 	# set title and labels for axes
 	ax.set(xlabel="Date",
@@ -133,26 +159,26 @@ def sentiment_plot(date, ypos, yneg, yneu, yunk, title):
 
 	plt.savefig('plot/'+currentDT+'_'+title+'_result_plot.png')
 
-    
 
 if __name__ == "__main__":
 
 	tweets = pd.DataFrame()
-
+	print("--Data Loading--")
 	for filename in os.listdir(PATH_DATA):
-		data = pd.read_csv(PATH_DATA+'/'+filename, low_memory=False)
+		data = pd.read_csv(PATH_DATA+'/'+filename, low_memory=False, encoding='cp1252')
 		# print(data)
 		tweets = tweets.append(data)
 
-	tweets = tweets.loc[:,['Date','Full Text','Domain','Sentiment']]
+	tweets = tweets.loc[:,['Date','Full Text','Domain','Sentiment','Twitter Retweet of']]
 
+	print(tweets[0:6])
+
+	tweets.loc[:,'Date_Ext'] = tweets.loc[:,'Date'].str.slice(0,11)
+	tweets.loc[:,'Time_Ext'] = tweets.loc[:,'Date'].str[12,]
+
+	print(tweets.loc[0:6,'Date_Ext'])
 	# tweets['token_text'] = [tokenize(item['Full Text']) for item in tweets]
-	for i in range(len(tweets)):
-	    #Separate each line to text_data list
-	    tweets.loc[i,'Date'] = str(tweets.loc[i,'Date'])[0:23]
-	    date , time = datetime_extraction(str(tweets.loc[i,'Date'])[0:23])
-	    tweets.loc[i,'Date_Ext'] = date
-	    tweets.loc[i,'Time_Ext'] = time
+	# 12:
 
 	tweets.drop_duplicates(inplace=True)
 
@@ -164,9 +190,26 @@ if __name__ == "__main__":
 	#Plot
 	# plot(domain_count['Date_Ext'], domain_count['positive'], domain_count['negative'], plot_result['neutral'], plot_result['unknown'], 'overall')
 	
+	#Get Only Topics
+	if TO_INCLUDE:
+		for ind in tweets.index:
+			if any(word in str(tweets.loc[ind,'Full Text']).lower() for word in TOPIC):
+				continue
+			else:
+				tweets.drop(ind, inplace=True)
+
+	if TO_EXCLUDE:
+		for ind in tweets.index:
+			if any(word in str(tweets.loc[ind,'Full Text']).lower() for word in EXCLUDE_TOPIC):
+				tweets.drop(ind, inplace=True)
+			else:
+				continue
+		
+
 	for ind in tweets.index:
 	    #Separate each line to text_data list
-		if "RT" == str(tweets.loc[ind,'Full Text'])[0:2] :
+		# print(len(str(tweets.loc[ind,'Twitter Retweet of'])))
+		if 5 > len(str(tweets.loc[ind,'Twitter Retweet of'])) or "RT" == str(tweets.loc[ind,'Full Text']):
 			tweets.loc[ind,'retweet'] = 'retweet'
 		else:
 			tweets.loc[ind,'retweet'] = 'not_retweet'
@@ -196,7 +239,10 @@ if __name__ == "__main__":
 	    else:
 	    	result_token.append([])
 	    # tweets.at[i,'token_text'] = token
-	# print(text_data)
+	print(type(result_token))
+
+	#Get only specific topic
+	
 
 	tweets['token_text'] = result_token
 
@@ -215,14 +261,14 @@ if __name__ == "__main__":
 			tweets.loc[ind,'same_result_bw'] = 1
 		else:
 			tweets.loc[ind,'same_result_bw'] = 0
-    
+			
 	
     
 	#returning a list of [positive, neutral, negative]
 	# print(tweets['sentiment_py'].value_counts())
 
 	#compare sentiment with brandwatch
-	print(str(sum(tweets.loc[ind,'same_result_bw'])))
+	# print(str(sum(tweets.loc[ind,'same_result_bw'])))
 
 	#saving sentiment as a csv for cleaned tweets of a given ticker
 	tweets.to_csv(os.path.join(PATH_RESULT,currentDT+'_sentiment.csv'), index=False)
@@ -239,7 +285,7 @@ if __name__ == "__main__":
 	plot_result.to_csv(os.path.join(PATH_RESULT,currentDT+'_sentiment_count.csv'), index=False)
 
 	#Plot
-	sentiment_plot(plot_result['Date_Ext'], plot_result['positive'], plot_result['negative'], plot_result['neutral'], plot_result['unknown'], 'overall')
+	sentiment_plot(plot_result['Date_Ext'], plot_result['positive'], plot_result['negative'], plot_result['neutral'], 'overall')
 
 
 
