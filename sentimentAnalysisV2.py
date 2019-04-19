@@ -20,6 +20,9 @@ import nltk
 from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
+import benchmark as bm
+from scipy import stats
+import statistics
 
 
 currentDT = ""
@@ -42,6 +45,13 @@ if TO_EXCLUDE:
 	PLOT_NOTE2 = "Exclude word : "+str(EXCLUDE_TOPIC)
 
 PLOT_NOTE = PLOT_NOTE1 + " " + PLOT_NOTE2
+
+mean_stat = 0
+stdev_stat = 0
+min_stat = 0
+max_stat = 0
+upper_ci = 0
+lower_ci = 0
 
  
 
@@ -117,7 +127,7 @@ def get_sentiment(tweet):
 		return result
 	analysis = TextBlob(tw_string)
 	# set sentiment 
-	if analysis.sentiment.polarity > 0:
+	if analysis.sentiment.polarity > 0.3:
 		result = 'positive'
 	elif analysis.sentiment.polarity < 0:
 		result = 'negative'
@@ -374,17 +384,61 @@ def pipeline(tweets):
 	#saving sentiment as a csv for cleaned tweets of a given ticker
 	plot_original_result.to_csv(os.path.join(PATH_RESULT,currentDT+'_sentiment_original_count.csv'), index=False)
 
+	pass_threshold_date = []
+
+	#calculate delta of sentiment day and day-1
+	for idx in range(len(plot_original_result)):
+		if idx == max(range(len(plot_original_result))):
+			break
+		else:
+			positive_delta = plot_original_result.loc[idx+1, 'pos_ori_per']-plot_original_result.loc[idx, 'pos_ori_per']
+			negative_delta = plot_original_result.loc[idx+1, 'neg_ori_per']-plot_original_result.loc[idx, 'neg_ori_per']
+
+			if positive_delta >= upper_ci:
+				pass_threshold_date.append(plot_original_result.loc[idx,'Date_Ext'])
+			elif positive_delta <= lower_ci:
+				pass_threshold_date.append(plot_original_result.loc[idx,'Date_Ext'])
+			elif negative_delta >= upper_ci:
+				pass_threshold_date.append(plot_original_result.loc[idx,'Date_Ext'])
+			elif negative_delta <= lower_ci:
+				pass_threshold_date.append(plot_original_result.loc[idx,'Date_Ext'])
+
+	return pass_threshold_date
+
 if __name__ == "__main__":
 
 	nlp = spacy.load('en_core_web_sm')
 
 	tweets = pd.DataFrame()
+
+	delta_sentiment = []
+
+	#find benchmark
 	for filename in os.listdir(PATH_DATA):
 		print("--Data Loading--")
 		data = pd.read_csv(PATH_DATA+'/'+filename, low_memory=False, encoding='utf-8')
-		pipeline(data)
+		delta_sentiment = delta_sentiment+bm.benchmark(data)
+
+	mean_stat = statistics.mean(delta_sentiment)
+	stdev_stat = statistics.stdev(delta_sentiment)
+	min_stat = min(delta_sentiment)
+	max_stat = max(delta_sentiment)
+
+	upper_ci = mean + (2*stdev_stat)
+	lower_ci = mean - (2*stdev_stat)
+	F = open('benchmark.txt','w')
+	F.write("Mean:       " + str(statistics.mean(delta_sentiment)))
+	F.write("Standard deviation:"+ str(statistics.stdev(delta_sentiment)))
+	F.write("Minimum:    "+ str(min(delta_sentiment)))
+	F.write("Maximum:    "+ str(max(delta_sentiment)))
+	F.close()
+	pass_threshold_date = []
+	for filename in os.listdir(PATH_DATA):
+		print("--Data Loading--")
+		data = pd.read_csv(PATH_DATA+'/'+filename, low_memory=False, encoding='utf-8')
+		pass_threshold_date = pass_threshold_date + pipeline(data)
 		# print(data)
-		# tweets = tweets.append(data)
+		
 
 	
 
