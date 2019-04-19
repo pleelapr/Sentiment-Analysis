@@ -207,9 +207,11 @@ def plot_percent_sentiment(date, ypos, yneg, yneu, title, currentDT):
 
 def pipeline(tweets):
 
-	currentDT = f"{datetime.now():%Y-%m-%d-%H-%M}"
+	currentDT = f"{datetime.now():%Y-%m-%d-%H-%M-%S}"
 	
-	tweets = tweets.loc[:,['Date (EST)','Contents', 'Post Title']]
+	tweets = tweets.loc[:,['Date (EST)','Contents','Category', 'Post Title']]
+
+	tweets['Category'] = tweets['Category'].str.lower()
 
 	print(tweets[0:6])
 
@@ -314,6 +316,20 @@ def pipeline(tweets):
 
 	#compare sentiment with brandwatch
 	# print(str(sum(tweets.loc[ind,'same_result_bw'])))
+	tweets.reset_index(inplace=True)
+
+	#compare python sentiment with CH sentiment
+	for idx in tweets.index:
+		if tweets.loc[idx,'sentiment_py'] == tweets.loc[idx,'Category']:
+			tweets.loc[idx,'same_pred'] = 1
+		else:
+			tweets.loc[idx,'same_pred'] = 0
+
+	plot_result = tweets.groupby(['Date_Ext', 'Category', 'same_pred']).size().unstack(fill_value=0)
+
+	plot_result.reset_index(inplace=True)
+
+	plot_result.to_csv(os.path.join(PATH_RESULT,currentDT+'_compare_result_count.csv'), index=False)
 
 	#saving sentiment as a csv for cleaned tweets of a given ticker
 	tweets.to_csv(os.path.join(PATH_RESULT,currentDT+'_sentiment.csv'), index=False)
@@ -326,11 +342,15 @@ def pipeline(tweets):
 
 	plot_result.reset_index(inplace=True)
 
-	#saving sentiment as a csv for cleaned tweets of a given ticker
-	plot_result.to_csv(os.path.join(PATH_RESULT,currentDT+'_sentiment_count.csv'), index=False)
-
-	#Plot
+	#Python Sentiment Plot
 	sentiment_plot(plot_result['Date_Ext'], plot_result['positive'], plot_result['negative'], plot_result['neutral'], 'overall', currentDT)
+
+	#Original Sentiment
+	plot_original_result = tweets.groupby(['Date_Ext', 'Category']).size().unstack(fill_value=0)
+
+	plot_original_result.reset_index(inplace=True)
+
+	sentiment_plot(plot_original_result['Date_Ext'], plot_original_result['positive'], plot_original_result['negative'], plot_original_result['neutral'], 'original_overall', currentDT)
 
 	#calculate percentage of each sentiment
 	for idx in plot_result.index:
@@ -339,10 +359,20 @@ def pipeline(tweets):
 		plot_result.loc[idx,'neu_per'] = 100*plot_result.loc[idx, 'neutral']/(plot_result.loc[idx, 'positive']+plot_result.loc[idx, 'negative']+plot_result.loc[idx, 'neutral'])
 
 	plot_percent_sentiment(plot_result['Date_Ext'], plot_result['pos_per'], plot_result['neg_per'], plot_result['neu_per'], 'percent sentiment', currentDT)
-	# for i in range(len(tweets)):
-	# 	tweets.loc[i,'tweetText'] = clean_tweet(tweets.loc[i,'tweetText'])
 
-	# print(tweets[0:6])
+	#calculate percentage of each sentiment
+	for idx in plot_original_result.index:
+		plot_original_result.loc[idx,'pos_ori_per'] = 100*plot_original_result.loc[idx, 'positive']/(plot_original_result.loc[idx, 'positive']+plot_original_result.loc[idx, 'negative']+plot_original_result.loc[idx, 'neutral'])
+		plot_original_result.loc[idx,'neg_ori_per'] = 100*plot_original_result.loc[idx, 'negative']/(plot_original_result.loc[idx, 'positive']+plot_original_result.loc[idx, 'negative']+plot_original_result.loc[idx, 'neutral'])
+		plot_original_result.loc[idx,'neu_ori_per'] = 100*plot_original_result.loc[idx, 'neutral']/(plot_original_result.loc[idx, 'positive']+plot_original_result.loc[idx, 'negative']+plot_original_result.loc[idx, 'neutral'])
+
+	plot_percent_sentiment(plot_original_result['Date_Ext'], plot_original_result['pos_ori_per'], plot_original_result['neg_ori_per'], plot_original_result['neu_ori_per'], 'percent_original_sentiment', currentDT)
+	
+	#saving sentiment as a csv for cleaned tweets of a given ticker
+	plot_result.to_csv(os.path.join(PATH_RESULT,currentDT+'_sentiment_count.csv'), index=False)
+
+	#saving sentiment as a csv for cleaned tweets of a given ticker
+	plot_original_result.to_csv(os.path.join(PATH_RESULT,currentDT+'_sentiment_original_count.csv'), index=False)
 
 if __name__ == "__main__":
 
