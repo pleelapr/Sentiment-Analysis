@@ -424,20 +424,29 @@ if __name__ == "__main__":
 	min_stat = min(delta_sentiment)
 	max_stat = max(delta_sentiment)
 
-	upper_ci = mean + (2*stdev_stat)
-	lower_ci = mean - (2*stdev_stat)
+	upper_ci = mean_stat + (2*stdev_stat)
+	lower_ci = mean_stat - (2*stdev_stat)
 	F = open('benchmark.txt','w')
-	F.write("Mean:       " + str(statistics.mean(delta_sentiment)))
-	F.write("Standard deviation:"+ str(statistics.stdev(delta_sentiment)))
-	F.write("Minimum:    "+ str(min(delta_sentiment)))
-	F.write("Maximum:    "+ str(max(delta_sentiment)))
+	F.write("Mean:       " + str(mean_stat) + "\n")
+	F.write("Standard deviation:"+ str(stdev_stat) + "\n")
+	F.write("Minimum:    "+ str(min_stat) + "\n")
+	F.write("Maximum:    "+ str(max_stat) + "\n")
+	F.write("UPPER CI:    "+ str(upper_ci) + "\n")
+	F.write("LOWER CI:    "+ str(lower_ci) + "\n")
 	F.close()
+
+
+
 	pass_threshold_date = []
 	for filename in os.listdir(PATH_DATA):
 		print("--Data Loading--")
 		data = pd.read_csv(PATH_DATA+'/'+filename, low_memory=False, encoding='utf-8')
 		pass_threshold_date = pass_threshold_date + pipeline(data)
 		# print(data)
+	with open('pass_threshold_date.txt', 'w') as f:
+		for item in pass_threshold_date:
+			f.write("%s\n" % item)
+
 		
 
 	
